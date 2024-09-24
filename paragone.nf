@@ -11,7 +11,7 @@ nextflow.enable.dsl=2
 /////////////////////////////////////////////////////////////////////////////////////////
 
 if( params.remove('version') ) {
-    println('paragone-nf version 1.0.2, running ParaGone version 1.1.0')
+    println('paragone-nf version 1.0.3, for running ParaGone version 1.1.3')
     exit 0
 } 
 
