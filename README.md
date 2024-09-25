@@ -1,6 +1,6 @@
 # paragone-nf: a paralogy resolution pipeline
 
-Current version: 1.0.1 (October 2023)
+Current version: 1.1.0 (September 2024)
 
 ## Original orthology inference manuscript, documentation and scripts
 

@@ -11,7 +11,7 @@ nextflow.enable.dsl=2
 /////////////////////////////////////////////////////////////////////////////////////////
 
 if( params.remove('version') ) {
-    println('paragone-nf version 1.0.3, for running ParaGone version 1.1.3')
+    println('paragone-nf version 1.1.0, for running ParaGone version 1.1.3')
     exit 0
 } 
 
@@ -605,56 +605,56 @@ workflow {
   ALIGNMENT_TO_TREE( alignments_ch,
                      CHECK_AND_ALIGN.out.check_and_align_logs_and_reports_ch) 
 
-  QC_TREES_AND_EXTRACT_FASTA( ALIGNMENT_TO_TREE.out.trees_pre_quality_control_ch,
-                              alignments_ch,
-                              ALIGNMENT_TO_TREE.out.alignment_to_tree_logs_and_reports_ch )
+  // QC_TREES_AND_EXTRACT_FASTA( ALIGNMENT_TO_TREE.out.trees_pre_quality_control_ch,
+  //                             alignments_ch,
+  //                             ALIGNMENT_TO_TREE.out.alignment_to_tree_logs_and_reports_ch )
 
-  if (params.external_outgroups_file) {
-    ALIGN_SELECTED_AND_TREE( alignments_ch,
-                             QC_TREES_AND_EXTRACT_FASTA.out.sequences_from_qc_trees_ch,
-                             CHECK_AND_ALIGN.out.external_outgroups_sanitised_ch,
-                             QC_TREES_AND_EXTRACT_FASTA.out.qc_trees_and_extract_fasta_log_and_reports_ch )
-    } else {
-      ALIGN_SELECTED_AND_TREE( alignments_ch,
-                               QC_TREES_AND_EXTRACT_FASTA.out.sequences_from_qc_trees_ch,
-                               [], // pass in empty list in place of sanitised external outgroup file
-                               QC_TREES_AND_EXTRACT_FASTA.out.qc_trees_and_extract_fasta_log_and_reports_ch ) 
-    }
+  // if (params.external_outgroups_file) {
+  //   ALIGN_SELECTED_AND_TREE( alignments_ch,
+  //                            QC_TREES_AND_EXTRACT_FASTA.out.sequences_from_qc_trees_ch,
+  //                            CHECK_AND_ALIGN.out.external_outgroups_sanitised_ch,
+  //                            QC_TREES_AND_EXTRACT_FASTA.out.qc_trees_and_extract_fasta_log_and_reports_ch )
+  //   } else {
+  //     ALIGN_SELECTED_AND_TREE( alignments_ch,
+  //                              QC_TREES_AND_EXTRACT_FASTA.out.sequences_from_qc_trees_ch,
+  //                              [], // pass in empty list in place of sanitised external outgroup file
+  //                              QC_TREES_AND_EXTRACT_FASTA.out.qc_trees_and_extract_fasta_log_and_reports_ch ) 
+  //   }
 
-  PRUNE_PARALOGS( ALIGN_SELECTED_AND_TREE.out.pre_paralog_resolution_trees_ch,
-                  ALIGN_SELECTED_AND_TREE.out.align_selected_and_tree_logs_and_reports_ch )
+  // PRUNE_PARALOGS( ALIGN_SELECTED_AND_TREE.out.pre_paralog_resolution_trees_ch,
+  //                 ALIGN_SELECTED_AND_TREE.out.align_selected_and_tree_logs_and_reports_ch )
 
-  // Get input pruned trees depending on resolution algorithms supplied:
-  if (params.mo) {
-    mo_ch = PRUNE_PARALOGS.out.pruned_MO_ch
-  } else {
-    mo_ch = []
-  }
+  // // Get input pruned trees depending on resolution algorithms supplied:
+  // if (params.mo) {
+  //   mo_ch = PRUNE_PARALOGS.out.pruned_MO_ch
+  // } else {
+  //   mo_ch = []
+  // }
 
-  if (params.mi) {
-    mi_ch = PRUNE_PARALOGS.out.pruned_MI_ch
-  } else {
-    mi_ch = []
-  }
+  // if (params.mi) {
+  //   mi_ch = PRUNE_PARALOGS.out.pruned_MI_ch
+  // } else {
+  //   mi_ch = []
+  // }
 
-  if (params.rt) {
-    rt_ch = PRUNE_PARALOGS.out.pruned_RT_ch
-  } else {
-    rt_ch = []
-  }
+  // if (params.rt) {
+  //   rt_ch = PRUNE_PARALOGS.out.pruned_RT_ch
+  // } else {
+  //   rt_ch = []
+  // }
 
-  // Get untrimmed or trimmed alignments depending on options supplied:
-  if (!params.no_trimming) {
-    pre_prune_alignments_ch = ALIGN_SELECTED_AND_TREE.out.pre_paralog_resolution_alignments_trimmed_ch
-  } else {
-    pre_prune_alignments_ch = ALIGN_SELECTED_AND_TREE.out.pre_paralog_resolution_alignments_ch
-  }
+  // // Get untrimmed or trimmed alignments depending on options supplied:
+  // if (!params.no_trimming) {
+  //   pre_prune_alignments_ch = ALIGN_SELECTED_AND_TREE.out.pre_paralog_resolution_alignments_trimmed_ch
+  // } else {
+  //   pre_prune_alignments_ch = ALIGN_SELECTED_AND_TREE.out.pre_paralog_resolution_alignments_ch
+  // }
 
-  FINAL_ALIGNMENTS( pre_prune_alignments_ch,
-                    mo_ch,
-                    mi_ch,
-                    rt_ch,
-                    PRUNE_PARALOGS.out.prune_paralogs_logs_and_reports_ch )
+  // FINAL_ALIGNMENTS( pre_prune_alignments_ch,
+  //                   mo_ch,
+  //                   mi_ch,
+  //                   rt_ch,
+  //                   PRUNE_PARALOGS.out.prune_paralogs_logs_and_reports_ch )
 
 }
 
