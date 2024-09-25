@@ -590,10 +590,11 @@ if (params.run_profiler) {
 workflow {
   CHECK_AND_ALIGN( paralogs_ch, outgroups_file_ch )
 
-
-  // Get the correct alignment outdir depending on trim/clean settings:
-  if (params.no_trimming && params.no_cleaning) {
+  // Get the correct alignment outdir depending on trim/clean/clustal settings:
+  if (params.no_trimming && params.no_cleaning && !params.use_clustal) {
     alignments_ch = CHECK_AND_ALIGN.out.alignments_ch
+  } else if (params.no_trimming && params.no_cleaning && params.use_clustal) {
+    alignments_ch = CHECK_AND_ALIGN.out.alignments_clustal_ch
   } else if (params.no_cleaning && !params.no_trimming) {
     alignments_ch = CHECK_AND_ALIGN.out.alignments_trimmed_ch
   } else if (params.no_trimming && !params.no_cleaning) {
@@ -605,56 +606,56 @@ workflow {
   ALIGNMENT_TO_TREE( alignments_ch,
                      CHECK_AND_ALIGN.out.check_and_align_logs_and_reports_ch) 
 
-  // QC_TREES_AND_EXTRACT_FASTA( ALIGNMENT_TO_TREE.out.trees_pre_quality_control_ch,
-  //                             alignments_ch,
-  //                             ALIGNMENT_TO_TREE.out.alignment_to_tree_logs_and_reports_ch )
+  QC_TREES_AND_EXTRACT_FASTA( ALIGNMENT_TO_TREE.out.trees_pre_quality_control_ch,
+                              alignments_ch,
+                              ALIGNMENT_TO_TREE.out.alignment_to_tree_logs_and_reports_ch )
 
-  // if (params.external_outgroups_file) {
-  //   ALIGN_SELECTED_AND_TREE( alignments_ch,
-  //                            QC_TREES_AND_EXTRACT_FASTA.out.sequences_from_qc_trees_ch,
-  //                            CHECK_AND_ALIGN.out.external_outgroups_sanitised_ch,
-  //                            QC_TREES_AND_EXTRACT_FASTA.out.qc_trees_and_extract_fasta_log_and_reports_ch )
-  //   } else {
-  //     ALIGN_SELECTED_AND_TREE( alignments_ch,
-  //                              QC_TREES_AND_EXTRACT_FASTA.out.sequences_from_qc_trees_ch,
-  //                              [], // pass in empty list in place of sanitised external outgroup file
-  //                              QC_TREES_AND_EXTRACT_FASTA.out.qc_trees_and_extract_fasta_log_and_reports_ch ) 
-  //   }
+  if (params.external_outgroups_file) {
+    ALIGN_SELECTED_AND_TREE( alignments_ch,
+                             QC_TREES_AND_EXTRACT_FASTA.out.sequences_from_qc_trees_ch,
+                             CHECK_AND_ALIGN.out.external_outgroups_sanitised_ch,
+                             QC_TREES_AND_EXTRACT_FASTA.out.qc_trees_and_extract_fasta_log_and_reports_ch )
+    } else {
+      ALIGN_SELECTED_AND_TREE( alignments_ch,
+                               QC_TREES_AND_EXTRACT_FASTA.out.sequences_from_qc_trees_ch,
+                               [], // pass in empty list in place of sanitised external outgroup file
+                               QC_TREES_AND_EXTRACT_FASTA.out.qc_trees_and_extract_fasta_log_and_reports_ch ) 
+    }
 
-  // PRUNE_PARALOGS( ALIGN_SELECTED_AND_TREE.out.pre_paralog_resolution_trees_ch,
-  //                 ALIGN_SELECTED_AND_TREE.out.align_selected_and_tree_logs_and_reports_ch )
+  PRUNE_PARALOGS( ALIGN_SELECTED_AND_TREE.out.pre_paralog_resolution_trees_ch,
+                  ALIGN_SELECTED_AND_TREE.out.align_selected_and_tree_logs_and_reports_ch )
 
-  // // Get input pruned trees depending on resolution algorithms supplied:
-  // if (params.mo) {
-  //   mo_ch = PRUNE_PARALOGS.out.pruned_MO_ch
-  // } else {
-  //   mo_ch = []
-  // }
+  // Get input pruned trees depending on resolution algorithms supplied:
+  if (params.mo) {
+    mo_ch = PRUNE_PARALOGS.out.pruned_MO_ch
+  } else {
+    mo_ch = []
+  }
 
-  // if (params.mi) {
-  //   mi_ch = PRUNE_PARALOGS.out.pruned_MI_ch
-  // } else {
-  //   mi_ch = []
-  // }
+  if (params.mi) {
+    mi_ch = PRUNE_PARALOGS.out.pruned_MI_ch
+  } else {
+    mi_ch = []
+  }
 
-  // if (params.rt) {
-  //   rt_ch = PRUNE_PARALOGS.out.pruned_RT_ch
-  // } else {
-  //   rt_ch = []
-  // }
+  if (params.rt) {
+    rt_ch = PRUNE_PARALOGS.out.pruned_RT_ch
+  } else {
+    rt_ch = []
+  }
 
-  // // Get untrimmed or trimmed alignments depending on options supplied:
-  // if (!params.no_trimming) {
-  //   pre_prune_alignments_ch = ALIGN_SELECTED_AND_TREE.out.pre_paralog_resolution_alignments_trimmed_ch
-  // } else {
-  //   pre_prune_alignments_ch = ALIGN_SELECTED_AND_TREE.out.pre_paralog_resolution_alignments_ch
-  // }
+  // Get untrimmed or trimmed alignments depending on options supplied:
+  if (!params.no_trimming) {
+    pre_prune_alignments_ch = ALIGN_SELECTED_AND_TREE.out.pre_paralog_resolution_alignments_trimmed_ch
+  } else {
+    pre_prune_alignments_ch = ALIGN_SELECTED_AND_TREE.out.pre_paralog_resolution_alignments_ch
+  }
 
-  // FINAL_ALIGNMENTS( pre_prune_alignments_ch,
-  //                   mo_ch,
-  //                   mi_ch,
-  //                   rt_ch,
-  //                   PRUNE_PARALOGS.out.prune_paralogs_logs_and_reports_ch )
+  FINAL_ALIGNMENTS( pre_prune_alignments_ch,
+                    mo_ch,
+                    mi_ch,
+                    rt_ch,
+                    PRUNE_PARALOGS.out.prune_paralogs_logs_and_reports_ch )
 
 }
 
@@ -676,17 +677,16 @@ process CHECK_AND_ALIGN {
   input:
     path(paralog_folder)
     path(external_outgroups_file)
-    
 
   output:
     stdout emit: outgroup_coverage_ch
     path ("00_logs_and_reports"), emit: check_and_align_logs_and_reports_ch
     path ("01_input_paralog_fasta_with_sanitised_filenames"), emit: paralogs_sanatised_filenames_ch
-    path ("02_alignments"), emit: alignments_ch
+    path ("02_alignments"), emit: alignments_ch, optional: true
+    path ("02_alignments_clustal"), emit: alignments_clustal_ch, optional: true
     path ("03_alignments_trimmed"), emit: alignments_trimmed_ch
     path ("04_alignments_trimmed_cleaned"), emit: alignments_trimmed_cleaned_ch
-    path("*sanitised.*"), emit: external_outgroups_sanitised_ch optional true
-    
+    path("*sanitised.*"), emit: external_outgroups_sanitised_ch, optional: true
 
   script:
     check_and_align_command = "paragone check_and_align ${paralog_folder} " + check_and_align_command_list.join(' ')
@@ -775,7 +775,7 @@ process ALIGN_SELECTED_AND_TREE {
     path ("00_logs_and_reports"), emit: align_selected_and_tree_logs_and_reports_ch
     path("10_sequences_from_qc_outgroups_added")
     path("11_pre_paralog_resolution_alignments"), emit: pre_paralog_resolution_alignments_ch
-    path("12_pre_paralog_resolution_alignments_trimmed"), emit: pre_paralog_resolution_alignments_trimmed_ch optional true
+    path("12_pre_paralog_resolution_alignments_trimmed"), emit: pre_paralog_resolution_alignments_trimmed_ch, optional: true
     path("13_pre_paralog_resolution_trees"), emit: pre_paralog_resolution_trees_ch
 
   script:
@@ -803,10 +803,9 @@ process PRUNE_PARALOGS {
 
   output:
     path ("00_logs_and_reports"), emit: prune_paralogs_logs_and_reports_ch
-    path("14_pruned_MO"), emit: pruned_MO_ch optional true
-    path("15_pruned_MI"), emit: pruned_MI_ch optional true
-    path("16_pruned_RT"), emit: pruned_RT_ch optional true
-
+    path("14_pruned_MO"), emit: pruned_MO_ch, optional: true
+    path("15_pruned_MI"), emit: pruned_MI_ch, optional: true
+    path("16_pruned_RT"), emit: pruned_RT_ch, optional: true
 
   script:
     prune_paralogs_command = "paragone prune_paralogs " + prune_paralogs_command_list.join(' ')
@@ -834,21 +833,20 @@ process FINAL_ALIGNMENTS {
     path(rt_trees)
     path(logs_and_reports)
 
-
   output:
     path ("00_logs_and_reports"), emit: final_alignments_logs_and_reports_ch
-    path("17_selected_sequences_MO") optional true
-    path("18_selected_sequences_MI") optional true
-    path("19_selected_sequences_RT") optional true
-    path("20_MO_stripped_names") optional true
-    path("21_MI_stripped_names") optional true
-    path("22_RT_stripped_names") optional true
-    path("23_MO_final_alignments") optional true
-    path("24_MI_final_alignments") optional true
-    path("25_RT_final_alignments") optional true
-    path("26_MO_final_alignments_trimmed") optional true
-    path("27_MI_final_alignments_trimmed") optional true
-    path("28_RT_final_alignments_trimmed") optional true
+    path("17_selected_sequences_MO"), optional: true
+    path("18_selected_sequences_MI"), optional: true
+    path("19_selected_sequences_RT"), optional: true
+    path("20_MO_stripped_names"), optional: true
+    path("21_MI_stripped_names"), optional: true
+    path("22_RT_stripped_names"), optional: true
+    path("23_MO_final_alignments"), optional: true
+    path("24_MI_final_alignments"), optional: true
+    path("25_RT_final_alignments"), optional: true
+    path("26_MO_final_alignments_trimmed"), optional: true
+    path("27_MI_final_alignments_trimmed"), optional: true
+    path("28_RT_final_alignments_trimmed"), optional: true
 
   script:
     final_alignments_command = "paragone final_alignments --keep_intermediate_files " + final_alignments_command_list.join(' ')
@@ -863,4 +861,3 @@ process FINAL_ALIGNMENTS {
 /////////////////////////////////////////////////////////////////////////////////////////
 // END OF SCRIPT  
 /////////////////////////////////////////////////////////////////////////////////////////
-

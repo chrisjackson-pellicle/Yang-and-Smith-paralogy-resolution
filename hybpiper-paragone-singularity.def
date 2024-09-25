@@ -20,11 +20,9 @@ From: ubuntu:22.04
     apt-get -y install unzip
     apt-get -y install libgl1 # necessary for ete3, see https://github.com/etetoolkit/ete/issues/195
 
-    locale-gen en_US.UTF-8
-    echo "LANG=en_US.UTF-8" >> /etc/default/locale
-
+    # install miniconda:
     if [ ! -d /usr/local/miniconda3 ]; then
-        wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O ~/miniconda.sh && \
+        wget https://repo.anaconda.com/miniconda/Miniconda3-py39_24.4.0-0-Linux-x86_64.sh -O ~/miniconda.sh && \
         bash ~/miniconda.sh -b -p /usr/local/miniconda3 && \
         rm ~/miniconda.sh
     fi
@@ -32,32 +30,24 @@ From: ubuntu:22.04
     # set conda path:
     export PATH="/usr/local/miniconda3/bin:$PATH"
 
-    # add bioconda channel:
+    # add bioconda and conda-forge channels:
     conda config --add channels defaults
     conda config --add channels bioconda
     conda config --add channels conda-forge
 
 
-    # install programs using conda:
-
+    # install programs using conda/mamba:
     conda install -c conda-forge mamba
-    mamba install -y conda-forge::python=3.11
-    mamba install -y chrisjackson-pellicle::hybpiper=2.1.5
+    mamba install -y bioconda::paragone=1.1.3
+    mamba install -y hybpiper=2.1.8
     mamba install -y bioconda::trimmomatic=0.39
     mamba install -y bioconda::fastp=0.23.2
-    mamba install -y chrisjackson-pellicle::paragone=0.0.14rc
-
-    # install astral;
-    curl -OL https://github.com/smirarab/ASTRAL/raw/master/Astral.5.7.8.zip
-    unzip Astral.5.7.8.zip
-    chmod -R a+rX Astral
-
-    # install alv (terminal alignment viewer):
-    /usr/local/miniconda3/bin/pip install alv
 
 %environment
     export PATH="/usr/local/miniconda3/bin:$PATH"
     export PATH="/fast-tree-install:$PATH"
+    . /usr/local/miniconda3/etc/profile.d/conda.sh
+    conda activate base
 
 %runscript
     echo "This Singularity image is for use with the hybpiper.nf and paragone.nf scripts"

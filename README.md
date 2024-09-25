@@ -8,7 +8,7 @@ This pipeline makes use of the **paralogy resolution** (also described as **orth
 
 ## paragone-nf: containerised and pipelined using Singularity and Nextflow
 
-The software [ParaGone](https://github.com/chrisjackson-pellicle/ParaGone) includes modified versions of the Yang and Smith scripts (with added functionality, logging and reporting), along with new scripts to facilitate seamless running of the pipeline. To further simplify the process, here I’ve provided a [Singularity][13] container based on the Linux distribution Ubuntu 22.04, containing Paragone along with all the dependencies: [IQTree][3], [Clustal Omega][6], [MAFFT][5], [BioPython][15], [HMMCleaner][2], [trimal][1], [FastTreeMP][23], [TreeShrink](https://github.com/uym2/TreeShrink). The container is called `hybpiper-paragone.sif`.
+The software [ParaGone](https://github.com/chrisjackson-pellicle/ParaGone) includes modified versions of the Yang and Smith scripts (with added functionality, logging and reporting), along with new scripts to facilitate seamless running of the pipeline. To further simplify the process, here I’ve provided a [Singularity][13] container based on the Linux distribution Ubuntu 22.04, containing Paragone along with all the dependencies: [IQTree][3], [Clustal Omega][6], [MAFFT][5], [BioPython][15], [TAPER][2], [trimal][1], [FastTreeMP][23], [TreeShrink](https://github.com/uym2/TreeShrink). The container is called `hybpiper-paragone.sif`.
 
 To run the paralogy resolution pipeline using this container, I’ve provided a [Nextflow][14] script that uses the software in the Singularity container. This pipeline runs all steps with a single command. The pipeline script is called `paragone.nf`. It comes with an associated config file called `paragone.config`. The only input required is a folder containing `.fasta` files for each of your target-capture loci, including paralogs, and an optional `.fasta` file containing outgroup sequences (used by some of the paralogy resolution methods, see below). The number of parallel processes running at any time, as well as computing resources given to each process (e.g. number of CPUs, amount of RAM etc) can be configured by the user by modifying the provided config file. The pipeline can be run directly on your local computer, or on an HPC system submitting jobs via a scheduler (e.g. SLURM, PBS, etc).
 
@@ -280,7 +280,10 @@ For details on adapting the pipeline to run on local and HPC computing resources
       --trimal_sw                 (half) Window size only applies to statistics/methods based 
                                   on 'similarity, when trimming alignments with Trimal
 
-      --no_cleaning               Do not clean alignments using HmmCleaner.pl
+      --no_cleaning               Do not clean alignments using TAPER
+
+      --cleaning_cutoff           Cutoff value to pass to TAPER. Lower will perform more aggressive
+                                  cleaning. Default is 3 
 
       --run_profiler              If supplied, run the subcommand using cProfile. Saves a 
                                   *.csv file of results
@@ -338,6 +341,11 @@ etc.
 
 ## Changelog
 
+*25 September 2024*
+
+- Fixed a bug when the option `--use_clustal` is used.
+- Updated version of `paragone.nf` script to v1.1.1 (for running ParaGone version 1.1.3).
+
 *05 October 2023*
 
 - Fixed a bug with the Nextflow script that resulted in 'internal' outgroup sequences not being added back in to alignments prior to paralogy resolution, if they had been removed by previous alignment QC steps.
@@ -366,7 +374,7 @@ etc.
 - Singularity *.def file updated to use Ubuntu 20.04, and to install Muscle and FastTreeMP.
 
 [1]: http://trimal.cgenomics.org/ "Link to trimal website"
-[2]: https://bmcecolevol.biomedcentral.com/articles/10.1186/s12862-019-1350-2 "Link to HmmCleaner manuscript"
+[2]: https://doi.org/10.1111/2041-210X.13696 "Link to TAPER manuscript"
 [3]: http://www.iqtree.org/ "Link to IQtree website"
 [4]: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4209138/ "Link to the Yang and Smith 2014 manuscript"
 [5]: https://mafft.cbrc.jp/alignment/software/ "Link to mafft website"
